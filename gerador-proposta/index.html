@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Propostas — Sales Clube</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #E94560;
+    --blue: #0F3460;
+    --dark: #1A1A2E;
+    --green: #1E8449;
+    --gold: #B7770D;
+    --white: #ffffff;
+    --gray-50: #F8F9FA;
+    --gray-100: #F1F3F5;
+    --gray-200: #E9ECEF;
+    --gray-400: #ADB5BD;
+    --gray-600: #6C757D;
+    --gray-800: #343A40;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.05);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-50);
+    color: var(--dark);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  .topbar {
+    background: var(--dark);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar-logo {
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: .5px;
+  }
+  .topbar-logo span { color: var(--red); }
+  .topbar-sub { font-size: 12px; color: var(--gray-400); margin-left: 4px; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 28px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 6px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-200);
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .step:hover { background: var(--gray-100); }
+  .step.active { background: var(--dark); color: white; }
+  .step.done { background: #E8F5E9; color: var(--green); }
+  .step .num { display: block; font-size: 10px; margin-bottom: 2px; opacity: .7; }
+
+  .screen { display: none; }
+  .screen.on { display: block; }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px;
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 6px;
+  }
+  input, textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 13px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--dark);
+    font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(15,52,96,.08);
+  }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .tag {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1.5px solid var(--gray-200);
+    cursor: pointer;
+    color: var(--gray-600);
+    background: var(--white);
+    transition: all .15s;
+  }
+  .tag:hover { border-color: var(--blue); color: var(--blue); }
+  .tag.on { background: var(--blue); color: white; border-color: var(--blue); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; align-items: center; }
+  button {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1.5px solid var(--gray-200);
+    background: var(--white);
+    color: var(--dark);
+    transition: all .15s;
+  }
+  button:hover { background: var(--gray-100); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--dark); color: white; border-color: var(--dark); }
+  .btn-primary:hover { background: var(--blue); border-color: var(--blue); }
+  .btn-red { background: var(--red); color: white; border-color: var(--red); }
+  .btn-red:hover { opacity: .88; }
+  .btn-green { background: var(--green); color: white; border-color: var(--green); }
+  .btn-green:hover { opacity: .88; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .source-toggle {
+    display: flex;
+    background: var(--gray-100);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    margin-bottom: 16px;
+    width: fit-content;
+  }
+  .src-btn {
+    padding: 7px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--gray-600);
+    border-radius: var(--radius-sm);
+    transition: all .15s;
+    font-family: inherit;
+  }
+  .src-btn.on { background: var(--white); color: var(--dark); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  .ai-box {
+    background: linear-gradient(135deg, #EAF0FB 0%, #F0F7FF 100%);
+    border: 1.5px solid #B5D4F4;
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .ai-box-title { font-size: 13px; font-weight: 600; color: var(--blue); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .ai-box p { font-size: 12px; color: var(--gray-600); line-height: 1.6; }
+
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+  }
+  .spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .success-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #E8F5E9;
+    color: var(--green);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .error-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #FDECEA;
+    color: #C0392B;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .fase-card {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 10px;
+    background: var(--gray-50);
+  }
+  .fase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .fase-label { font-size: 12px; font-weight: 600; color: var(--gray-600); }
+  .rm-btn {
+    font-size: 11px;
+    color: #C0392B;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  .rm-btn:hover { background: #FDECEA; }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    font-size: 12px;
+    color: var(--gray-400);
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-200);
+  }
+
+  .output-wrap {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .output-toolbar {
+    background: var(--dark);
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .output-toolbar-title { font-size: 13px; font-weight: 600; color: white; }
+  .output-toolbar-actions { display: flex; gap: 8px; align-items: center; }
+  .output-body { padding: 24px; }
+
+  .prop-section { margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--gray-100); }
+  .prop-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .prop-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--red);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .prop-label::after { content: ''; flex: 1; height: 1px; background: var(--gray-100); }
+  .prop-content {
+    font-size: 13.5px;
+    line-height: 1.85;
+    color: var(--gray-800);
+    white-space: pre-wrap;
+  }
+
+  .copy-msg { font-size: 12px; color: var(--green); font-weight: 500; }
+
+  .hint { font-size: 12px; color: var(--gray-600); margin-top: 5px; line-height: 1.5; }
+
+  .extracted-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 500;
+    margin-left: 8px;
+  }
+
+  @media (max-width: 600px) {
+    .g2, .g3 { grid-template-columns: 1fr; }
+    .steps { overflow-x: auto; }
+    .step .num { display: none; }
+    .container { padding: 16px 12px 40px; }
+  }
+
+  .field-ai input, .field-ai textarea {
+    border-color: #B5D4F4;
+    background: #F0F7FF;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">SALES <span>CLUBE</span></div>
+  <div class="topbar-sub">Gerador de Propostas Comerciais</div>
+</div>
+
+<div class="container">
+
+  <div class="steps">
+    <div class="step active" id="t1" onclick="go(1)"><span class="num">01</span>Entrada</div>
+    <div class="step" id="t2" onclick="go(2)"><span class="num">02</span>Cliente</div>
+    <div class="step" id="t3" onclick="go(3)"><span class="num">03</span>Solução</div>
+    <div class="step" id="t4" onclick="go(4)"><span class="num">04</span>Investimento</div>
+    <div class="step" id="t5" onclick="go(5)"><span class="num">05</span>Proposta</div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="screen on" id="s1">
+    <div class="card">
+      <div class="card-title"><div class="icon">✦</div> Como você quer começar?</div>
+      <div class="source-toggle">
+        <button class="src-btn on" id="src-trans" onclick="setSource('transcript')">Colar transcrição</button>
+        <button class="src-btn" id="src-manual" onclick="setSource('manual')">Preencher manual</button>
+      </div>
+
+      <div id="area-transcript">
+        <div class="ai-box">
+          <div class="ai-box-title">✦ Extração automática com IA</div>
+          <p>Cole a transcrição da reunião (Google Meet, Teams, Zoom) e a IA vai extrair automaticamente empresa, contato, dor, resultado esperado, módulos sugeridos e muito mais.</p>
+        </div>
+        <div class="field">
+          <label>Transcrição da reunião</label>
+          <textarea id="transcript" style="min-height: 160px" placeholder="Cole aqui a transcrição completa. Quanto mais detalhada, melhor o resultado. Funciona com transcrições brutas — não precisa formatar."></textarea>
+        </div>
+        <div class="btn-row" style="justify-content: space-between">
+          <span id="ai-status"></span>
+          <button class="btn-primary" id="btn-extrair" onclick="extrairComIA()">✦ Extrair com IA</button>
+        </div>
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p style="font-size: 13px; color: var(--gray-600)">Analisando a transcrição...</p>
+        </div>
+        <div class="divider">ou pule direto para o preenchimento manual</div>
+        <button onclick="go(2)" style="width: 100%; text-align: center; color: var(--gray-600)">Preencher manualmente →</button>
+      </div>
+
+      <div id="area-manual" style="display:none">
+        <p style="font-size: 13px; color: var(--gray-600); margin-bottom: 16px">Você vai preencher todos os campos nos próximos passos.</p>
+        <button class="btn-primary" style="width: 100%" onclick="go(2)">Começar preenchimento →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="screen" id="s2">
+    <div class="card">
+      <div class="card-title">
+        <div class="icon">🏢</div> Dados do cliente
+        <span id="badge-s2" style="margin-left: auto"></span>
+      </div>
+      <div class="g2">
+        <div class="field" id="f-empresa"><label>Empresa</label><input id="empresa" placeholder="Ex: Geopixel S.A." /></div>
+        <div class="field" id="f-contato"><label>Contato principal</label><input id="contato" placeholder="Ex: Ana Souza" /></div>
+      </div>
+      <div class="g2">
+        <div class="field" id="f-cargo"><label>Cargo</label><input id="cargo" placeholder="Ex: Diretora Comercial" /></div>
+        <div class="field" id="f-setor"><label>Segmento</label><input id="setor" placeholder="Ex: Tecnologia / SaaS" /></div>
+      </div>
+      <div class="field">
+        <label>Tamanho da equipe de vendas</label>
+        <div class="tags" id="tg-tam">
+          <span class="tag" onclick="tog(this,'tam')">Até 20 pessoas</span>
+          <span class="tag" onclick="tog(this,'tam')">20 a 50</span>
+          <span class="tag" onclick="tog(this,'tam')">50 a 150</span>
+          <span class="tag" onclick="tog(this,'tam')">Mais de 150</span>
+        </div>
+      </div>
+      <div class="field" id="f-contexto"><label>Contexto / como chegou este lead</label><textarea id="contexto" placeholder="Ex: Indicação do Sales Summit. Já conhece o Sales Clube."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="icon">🎯</div> Diagnóstico</div>
+      <div class="field" id="f-dor"><label>Principal dor ou desafio identificado</label><textarea id="dor" placeholder="Ex: Time com baixa conversão em discovery. Sem metodologia estruturada."></textarea></div>
+      <div class="field" id="f-resultado"><label>Resultado que o cliente quer alcançar</label><textarea id="resultado" placeholder="Ex: Aumentar taxa de conversão em 20% em 90 dias."></textarea></div>
+      <div class="field" id="f-passos"><label>Próximos passos combinados (opcional)</label><textarea id="passos" placeholder="Ex: Enviar proposta até sexta. Reunião de validação semana que vem."></textarea></div>
+    </div>
+
+    <div class="btn-row">
+      <button onclick="go(1)">← Voltar</button>
+      <button class="btn-primary" onclick="go(3)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="screen" id="s3">
+    <div class="card">
+      <div class="card-title"><div class="icon">📚</div> Solução proposta</div>
+      <div class="field" id="f-programa"><label>Nome do programa</label><input id="programa" placeholder="Ex: Jornada de Excelência Comercial — Geopixel" /></div>
+      <div class="field">
+        <label>Modalidade de entrega</label>
+        <div class="tags" id="tg-mod">
+          <span class="tag" onclick="tog(this,'mod')">Presencial</span>
+          <span class="tag" onclick="tog(this,'mod')">Online ao vivo</span>
+          <span class="tag" onclick="tog(this,'mod')">Híbrido</span>
+          <span class="tag" onclick="tog(this,'mod')">Assíncrono (EAD)</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Módulos / Fases <span style="font-weight:400; text-transform:none; letter-spacing:0; color: var(--gray-400)">— adicione quantos precisar</span></label>
+        <div id="fases-wrap"></div>
+        <button onclick="addFase()" class="btn-sm" style="margin-top: 6px">+ Adicionar módulo</button>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Professores / consultores</label><input id="prof" placeholder="Ex: Prof. João Lima — Vendas B2B" /></div>
+        <div class="field"><label>Carga horária total</label><input id="carga" placeholder="Ex: 24h (3 encontros)" /></div>
+      </div>
+      <div class="field"><label>Diferenciais desta proposta</label><textarea id="difer" placeholder="Ex: Conteúdo customizado para o contexto B2B. Professores com vivência no setor."></textarea></div>
+    </div>
+    <div class="btn-row">
+      <button onclick="go(2)">← Voltar</button>
+      <button class="btn-primary" onclick="go(4)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="screen" id="s4">
+    <div class="card">
+      <div class="card-title"><div class="icon">💰</div> Investimento</div>
+      <div class="field">
+        <label>Formato de apresentação do valor</label>
+        <div class="tags" id="tg-fmt">
+          <span class="tag" onclick="tog(this,'fmt')">Valor único</span>
+          <span class="tag" onclick="tog(this,'fmt')">Por módulo / fase</span>
+          <span class="tag" onclick="tog(this,'fmt')">Cenários (básico / completo)</span>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Valor total (R$)</label><input id="valor" type="number" placeholder="Ex: 28000" /></div>
+        <div class="field"><label>Condição de pagamento</label><input id="pgto" placeholder="Ex: 50% assinatura + 50% entrega" /></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Validade da proposta</label><input id="valid" placeholder="Ex: 15 dias corridos" /></div>
+        <div class="field"><label>Data da proposta</label><input id="data-prop" type="date" /></div>
+      </div>
+      <div class="field"><label>Observações sobre o investimento</label><textarea id="obs" placeholder="Ex: Valores não incluem deslocamento fora de SP. Possibilidade de parcelamento."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><div class="icon">🏷️</div> Dados do Sales Clube para a proposta</div>
+      <p class="hint" style="margin-bottom: 14px">Preencha uma vez e fica salvo para as próximas propostas.</p>
+      <div class="g2">
+        <div class="field"><label>Empresas atendidas</label><input id="num-empresas" placeholder="Ex: 300+" /></div>
+        <div class="field"><label>Profissionais capacitados</label><input id="num-profissionais" placeholder="Ex: 15.000+" /></div>
+      </div>
+      <div class="g2">
+        <div class="field"><label>Especialistas na rede</label><input id="num-especialistas" placeholder="Ex: 200+" /></div>
+        <div class="field"><label>NPS médio</label><input id="num-nps" placeholder="Ex: 92" /></div>
+      </div>
+      <div class="field"><label>Clientes de referência (3 principais)</label><textarea id="clientes-ref" placeholder="• Empresa A — Setor&#10;• Empresa B — Setor&#10;• Empresa C — Setor" style="min-height:60px"></textarea></div>
+      <div class="field"><label>Depoimento 1</label><textarea id="dep1" placeholder='"Texto do depoimento..." — Nome, Cargo, Empresa' style="min-height:60px"></textarea></div>
+      <div class="field"><label>Depoimento 2 (opcional)</label><textarea id="dep2" placeholder='"Texto do depoimento..." — Nome, Cargo, Empresa' style="min-height:60px"></textarea></div>
+    </div>
+
+    <div class="btn-row">
+      <button onclick="go(3)">← Voltar</button>
+      <button class="btn-green" onclick="go(5)">✓ Gerar proposta</button>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="screen" id="s5">
+    <div class="output-wrap">
+      <div class="output-toolbar">
+        <div class="output-toolbar-title">✦ Proposta gerada</div>
+        <div class="output-toolbar-actions">
+          <span class="copy-msg" id="copy-msg"></span>
+          <button onclick="copiar()" style="background: rgba(255,255,255,.1); color: white; border-color: rgba(255,255,255,.2)">⎘ Copiar texto</button>
+          <button onclick="go(1)" style="background: rgba(255,255,255,.08); color: white; border-color: rgba(255,255,255,.15)">+ Nova proposta</button>
+        </div>
+      </div>
+      <div class="output-body" id="output"></div>
+    </div>
+    <p style="font-size: 12px; color: var(--gray-600); text-align: center; margin-top: 12px">Copie o texto acima e cole no Gamma, PowerPoint ou Word para criar o visual da proposta.</p>
+  </div>
+
+</div>
+
+<script>
+const sel = { tam: '', mod: '', fmt: '' };
+let faseCount = 0, fasesIds = [];
+
+function go(n) {
+  if (n === 5) gerar();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById('s' + n).classList.add('on');
+  document.querySelectorAll('.step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i + 1 < n) s.classList.add('done');
+    if (i + 1 === n) s.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setSource(src) {
+  document.getElementById('area-transcript').style.display = src === 'transcript' ? 'block' : 'none';
+  document.getElementById('area-manual').style.display = src === 'manual' ? 'block' : 'none';
+  document.getElementById('src-trans').classList.toggle('on', src === 'transcript');
+  document.getElementById('src-manual').classList.toggle('on', src === 'manual');
+}
+
+function tog(el, group) {
+  document.querySelectorAll('#tg-' + group + ' .tag').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  sel[group] = el.textContent.trim();
+}
+
+function addFase(data = {}) {
+  faseCount++;
+  const id = 'f' + faseCount;
+  fasesIds.push(id);
+  const wrap = document.getElementById('fases-wrap');
+  const d = document.createElement('div');
+  d.className = 'fase-card';
+  d.id = 'fc' + id;
+  d.innerHTML = `
+    <div class="fase-header">
+      <span class="fase-label">Módulo ${faseCount}</span>
+      <button class="rm-btn" onclick="rmFase('${id}')">✕ remover</button>
+    </div>
+    <div class="g3">
+      <div class="field"><label>Nome</label><input id="fn_${id}" placeholder="Ex: Workshop Discovery" value="${data.nome || ''}" /></div>
+      <div class="field"><label>Duração</label><input id="fd_${id}" placeholder="Ex: 8h (1 dia)" value="${data.duracao || ''}" /></div>
+      <div class="field"><label>Público</label><input id="fp_${id}" placeholder="Ex: Gerentes" value="${data.publico || ''}" /></div>
+    </div>
+    <div class="field"><label>Objetivo</label><input id="fo_${id}" placeholder="Ex: Dominar técnicas de qualificação" value="${data.objetivo || ''}" /></div>`;
+  wrap.appendChild(d);
+}
+
+function rmFase(id) {
+  document.getElementById('fc' + id)?.remove();
+  fasesIds = fasesIds.filter(f => f !== id);
+}
+
+function v(id) { return (document.getElementById(id) || {}).value || ''; }
+function set(id, val) { const el = document.getElementById(id); if (el && val) el.value = val; }
+
+function markAI(fieldId) {
+  const el = document.getElementById(fieldId);
+  if (el) el.closest('.field')?.classList.add('field-ai');
+}
+
+async function extrairComIA() {
+  const transcript = v('transcript');
+  if (transcript.length < 80) {
+    alert('Cole uma transcrição mais completa para a IA extrair os dados.');
+    return;
+  }
+  const btn = document.getElementById('btn-extrair');
+  const loading = document.getElementById('loading');
+  const status = document.getElementById('ai-status');
+  btn.disabled = true;
+  loading.style.display = 'block';
+  status.innerHTML = '';
+
+  try {
+    const resp = await fetch('/api/extrair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Erro desconhecido');
+
+    preencherCampos(data);
+    loading.style.display = 'none';
+    status.innerHTML = '<span class="success-badge">✓ Extraído com sucesso</span>';
+    btn.disabled = false;
+    setTimeout(() => go(2), 900);
+  } catch (e) {
+    loading.style.display = 'none';
+    status.innerHTML = `<span class="error-badge">✕ ${e.message}</span>`;
+    btn.disabled = false;
+  }
+}
+
+function preencherCampos(d) {
+  const fieldsMap = {
+    empresa: d.empresa, contato: d.contato, cargo: d.cargo,
+    setor: d.setor, contexto: d.contexto, dor: d.dor,
+    resultado: d.resultado, programa: d.programa_sugerido,
+    passos: d.proximos_passos
+  };
+  Object.entries(fieldsMap).forEach(([id, val]) => { if (val) { set(id, val); markAI(id); } });
+
+  if (d.tamanho_equipe) {
+    document.querySelectorAll('#tg-tam .tag').forEach(t => {
+      const txt = t.textContent.toLowerCase();
+      const tam = d.tamanho_equipe.toLowerCase();
+      if ((tam.includes('150') && txt.includes('150')) ||
+          (tam.includes('50') && txt.includes('50 a 150')) ||
+          (tam.includes('20') && txt.includes('20 a 50'))) tog(t, 'tam');
+    });
+  }
+  if (d.modalidade) {
+    document.querySelectorAll('#tg-mod .tag').forEach(t => {
+      const txt = t.textContent.toLowerCase();
+      const mod = d.modalidade.toLowerCase();
+      if ((mod.includes('presencial') && txt.includes('presencial') && !txt.includes('híbrido')) ||
+          (mod.includes('online') && txt.includes('online')) ||
+          (mod.includes('híbrido') && txt.includes('híbrido')) ||
+          (mod.includes('hibrido') && txt.includes('híbrido')) ||
+          (mod.includes('assíncrono') && txt.includes('assíncrono'))) tog(t, 'mod');
+    });
+  }
+  if (d.modulos && d.modulos.length > 0) {
+    document.getElementById('fases-wrap').innerHTML = '';
+    fasesIds = []; faseCount = 0;
+    d.modulos.forEach(m => addFase(m));
+  }
+
+  const badge = document.getElementById('badge-s2');
+  if (badge) badge.innerHTML = '<span class="success-badge">✦ Preenchido pela IA</span>';
+}
+
+function moeda(n) {
+  const num = parseFloat(n);
+  if (!num || isNaN(num)) return '';
+  return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function gerar() {
+  const empresa = v('empresa') || '[Empresa]';
+  const contato = v('contato') || '[Contato]';
+  const cargo = v('cargo') || '[Cargo]';
+  const setor = v('setor') || '[Segmento]';
+  const tamanho = sel.tam || '[Tamanho da equipe]';
+  const contexto = v('contexto');
+  const dor = v('dor') || '[Desafio principal — preencha antes de enviar]';
+  const resultado = v('resultado') || '[Resultado esperado — preencha antes de enviar]';
+  const passos = v('passos');
+  const programa = v('programa') || 'Programa de Desenvolvimento Comercial';
+  const modalidade = sel.mod || '[Modalidade]';
+  const prof = v('prof');
+  const carga = v('carga');
+  const difer = v('difer');
+  const fmt = sel.fmt || 'Valor único';
+  const valor = moeda(v('valor'));
+  const pgto = v('pgto');
+  const valid = v('valid') || '15 dias corridos';
+  const obs = v('obs');
+  const dataProp = v('data-prop')
+    ? new Date(v('data-prop') + 'T12:00:00').toLocaleDateString('pt-BR')
+    : new Date().toLocaleDateString('pt-BR');
+
+  const numEmpresas = v('num-empresas') || '[X]+';
+  const numProf = v('num-profissionais') || '[X]+';
+  const numEspec = v('num-especialistas') || '[X]+';
+  const numNps = v('num-nps') || '[X]';
+  const clientesRef = v('clientes-ref') || '• [Empresa 1] — [Setor]\n• [Empresa 2] — [Setor]\n• [Empresa 3] — [Setor]';
+  const dep1 = v('dep1') || '"[Inserir depoimento real]"\n— [Nome], [Cargo], [Empresa]';
+  const dep2 = v('dep2');
+
+  const fasesTexto = fasesIds.map((id, i) => {
+    const nome = v('fn_' + id) || `Módulo ${i + 1}`;
+    const dur = v('fd_' + id);
+    const pub = v('fp_' + id);
+    const obj = v('fo_' + id);
+    let t = `Módulo ${i + 1}: ${nome}`;
+    if (dur) t += ` | ${dur}`;
+    if (pub) t += ` | Público: ${pub}`;
+    if (obj) t += `\nObjetivo: ${obj}`;
+    return t;
+  }).join('\n\n');
+
+  const sections = [
+    {
+      l: 'Capa',
+      t: `${empresa}\nAtenção: ${contato} — ${cargo}\n\n${programa}\nUma proposta personalizada do Sales Clube\n\nData: ${dataProp} | Validade: ${valid}`
+    },
+    {
+      l: 'Sobre o Sales Clube',
+      t: `O Sales Clube é o maior ecossistema de vendas do Brasil — uma rede viva de especialistas, practitioners e líderes comerciais com atuação real no mercado, não apenas em sala de aula.\n\nNossa missão: elevar o nível das equipes comerciais brasileiras por meio de programas InCompany 100% customizados.\n\nNossos números:\n• ${numEmpresas} empresas atendidas\n• ${numProf} profissionais capacitados\n• ${numEspec} especialistas ativos na rede\n• NPS médio: ${numNps}`
+    },
+    {
+      l: 'Por que o Sales Clube?',
+      t: `Treinamentos genéricos produzem resultados genéricos. O Sales Clube opera de forma diferente.\n\nCada programa é co-criado com a empresa — o time da ${empresa} não receberá conteúdo de prateleira, mas uma jornada construída para a realidade do negócio, do produto e do cliente de vocês.\n\n✔ Conteúdo desenvolvido a partir do contexto e do cliente ideal da ${empresa}\n✔ Especialistas selecionados para o perfil do time e do setor${setor !== '[Segmento]' ? ' de ' + setor : ''}\n✔ Metodologia validada em empresas com operações comerciais do porte da ${empresa}\n✔ Flexibilidade total de formato: presencial, online ao vivo ou híbrido\n✔ Acompanhamento de resultado com métricas definidas antes do início`
+    },
+    {
+      l: 'Diagnóstico',
+      t: `Empresa: ${empresa} | Segmento: ${setor}\nEquipe comercial: ${tamanho}${contexto ? '\n\nContexto:\n' + contexto : ''}\n\nDesafio identificado:\n${dor}\n\nResultado que a ${empresa} busca:\n${resultado}`
+    },
+    {
+      l: 'Nossa Metodologia',
+      t: `Não entregamos um evento de treinamento. Entregamos uma transformação estruturada em quatro etapas:\n\n1. Imersão — Antes de propor qualquer solução, entendemos o contexto da ${empresa}: os desafios reais do time, a cultura da operação e os comportamentos que precisam ser desenvolvidos.\n\n2. Customização — Adaptamos todo o conteúdo — cases, exercícios, linguagem e exemplos — para a realidade do negócio da ${empresa}. Nada genérico, nada reaproveitado de outro cliente.\n\n3. Entrega — O programa é facilitado pelo(a) especialista selecionado(a) para o perfil do time, com dinâmicas que geram aprendizado real.\n\n4. Resultado — Avaliação de aprendizado, plano de aplicação prática e acompanhamento pós-programa para garantir que o desenvolvimento se converta em performance.`
+    },
+    {
+      l: 'Solução Proposta',
+      t: `Programa: ${programa}\nModalidade: ${modalidade}${carga ? ' | Carga horária: ' + carga : ''}${fasesTexto ? '\n\nEstrutura do programa:\n\n' + fasesTexto : ''}${prof ? '\n\nEspecialista(s):\n' + prof : ''}${difer ? '\n\nDiferenciais desta proposta:\n' + difer : ''}`
+    },
+    {
+      l: 'Clientes que Já Atendemos',
+      t: `A ${empresa} estará em boa companhia.\n\nAlgumas das empresas que confiam ao Sales Clube o desenvolvimento de suas equipes:\n${clientesRef}`
+    },
+    {
+      l: 'O Que Dizem Nossos Clientes',
+      t: dep1 + (dep2 ? '\n\n' + dep2 : '')
+    },
+    {
+      l: 'Investimento',
+      t: `Formato: ${fmt}${valor ? '\nValor total: ' + valor : '\nValor: [A definir]'}${pgto ? '\nCondição: ' + pgto : ''}\nValidade: ${valid}${obs ? '\n\nObservações:\n' + obs : ''}\n\nTodos os valores são referentes ao escopo descrito nesta proposta. Qualquer ajuste de escopo será tratado de forma transparente e acordado previamente.`
+    },
+    {
+      l: 'Próximos Passos',
+      t: `Estamos prontos para começar. Para darmos início ao projeto:\n\n1. Aprovação desta proposta por ${contato}\n2. Assinatura do contrato de prestação de serviços\n3. Reunião de kickoff para alinhamento de datas e detalhes\n4. Início do programa${passos ? '\n\nAlinhamentos da reunião:\n' + passos : ''}\n\nJuceia Ferreira\nKAM — Gerente de Contas Estratégicas | Corporate\nSales Clube\njuceiaferreira.jf@gmail.com`
+    }
+  ];
+
+  window._proposta = sections.map(s => `## ${s.l}\n\n${s.t}`).join('\n\n---\n\n');
+  window._empresa = empresa;
+
+  const out = document.getElementById('output');
+  out.innerHTML = sections.map(s => `
+    <div class="prop-section">
+      <div class="prop-label">${s.l}</div>
+      <div class="prop-content">${s.t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`).join('');
+}
+
+function copiar() {
+  navigator.clipboard.writeText(window._proposta || '').then(() => {
+    const m = document.getElementById('copy-msg');
+    if (m) { m.textContent = '✓ Copiado!'; setTimeout(() => m.textContent = '', 2500); }
+  });
+}
+
+document.getElementById('data-prop').valueAsDate = new Date();
+addFase();
+</script>
+</body>
+</html>

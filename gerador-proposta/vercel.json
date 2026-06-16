@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/extrair.js": {
+      "maxDuration": 30
+    }
+  }
+}
